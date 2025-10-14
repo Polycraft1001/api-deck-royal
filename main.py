@@ -4,13 +4,17 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Permet les requêtes depuis n'importe quelle origine
+CORS(app)
 
-# Récupérer le token depuis les variables d'environnement pour plus de sécurité
-API_TOKEN = oAPI_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjNkNjVhNjA1LWY2NDMtNGJhZi04ZjFjLWM2NzM5NzA5M2NlZiIsImlhdCI6MTc2MDQ2Mjg5Niwic3ViIjoiZGV2ZWxvcGVyLzc5NmI3NDZhLTZlMjEtMDBiZi0yNDVjLTc4NDY2YWVmMGUzOSIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyI2Ni4zMy4yMi4yNTQiXSwidHlwZSI6ImNsaWVudCJ9XX0.RccEds9pKApSkjac4ji-DuheIqjntzYE8P7rB61GMf1QWY36UXKrHDRP-cKnRSi_VQsBhSLod3ZMT4C6bEB25g'
-
-
+# Token Clash Royale
+API_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjNkNjVhNjA1LWY2NDMtNGJhZi04ZjFjLWM2NzM5NzA5M2NlZiIsImlhdCI6MTc2MDQ2Mjg5Niwic3ViIjoiZGV2ZWxvcGVyLzc5NmI3NDZhLTZlMjEtMDBiZi0yNDVjLTc4NDY2YWVmMGUzOSIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyI2Ni4zMy4yMi4yNTQiXSwidHlwZSI6ImNsaWVudCJ9XX0.RccEds9pKApSkjac4ji-DuheIqjntzYE8P7rB61GMf1QWY36UXKrHDRP-cKnRSi_VQsBhSLod3ZMT4C6bEB25g'
 API_BASE = 'https://api.clashroyale.com/v1'
+
+# Configuration du proxy Railway
+PROXIES = {
+    "http": "http://tramway.proxy.rlwy.net:18838",
+    "https": "http://tramway.proxy.rlwy.net:18838"
+}
 
 @app.route('/')
 def home():
@@ -25,7 +29,6 @@ def home():
 
 @app.route('/api/player/<tag>')
 def get_player(tag):
-    """Récupère les informations d'un joueur par son tag"""
     try:
         clean_tag = tag.replace('#', '').upper()
         headers = {
@@ -33,7 +36,7 @@ def get_player(tag):
             'Accept': 'application/json'
         }
         url = f'{API_BASE}/players/%23{clean_tag}'
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, proxies=PROXIES, timeout=10)
         
         if response.status_code == 200:
             return jsonify(response.json())
@@ -46,14 +49,13 @@ def get_player(tag):
 
 @app.route('/api/cards')
 def get_cards():
-    """Récupère la liste de toutes les cartes"""
     try:
         headers = {
             'Authorization': f'Bearer {API_TOKEN}',
             'Accept': 'application/json'
         }
         url = f'{API_BASE}/cards'
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, proxies=PROXIES, timeout=10)
         
         if response.status_code == 200:
             return jsonify(response.json())
@@ -64,14 +66,12 @@ def get_cards():
 
 @app.route('/api/health')
 def health_check():
-    """Vérifier que l'API est accessible"""
     try:
         headers = {
             'Authorization': f'Bearer {API_TOKEN}',
             'Accept': 'application/json'
         }
-        response = requests.get(f'{API_BASE}/cards', headers=headers, timeout=5)
-        
+        response = requests.get(f'{API_BASE}/cards', headers=headers, proxies=PROXIES, timeout=5)
         if response.status_code == 200:
             return jsonify({'status': 'healthy', 'api': 'connected'})
         else:
@@ -79,7 +79,6 @@ def health_check():
     except Exception as e:
         return jsonify({'status': 'unhealthy', 'error': str(e)}), 503
 
-# Ne plus utiliser app.run() en production ; Gunicorn s'occupe du serveur
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
