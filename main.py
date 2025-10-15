@@ -64,21 +64,20 @@ def get_cards():
 
 @app.route('/api/health')
 def health_check():
-    """Vérifier que l'API est accessible"""
     try:
         headers = {
             'Authorization': f'Bearer {API_TOKEN}',
             'Accept': 'application/json'
         }
         response = requests.get(f'{API_BASE}/cards', headers=headers, timeout=5)
-        
-        if response.status_code == 200:
-            return jsonify({'status': 'healthy', 'api': 'connected'})
-        else:
-            return jsonify({'status': 'unhealthy', 'api': 'disconnected'}), 503
+        return jsonify({
+            'status': 'healthy' if response.status_code == 200 else 'unhealthy',
+            'api': 'connected' if response.status_code == 200 else 'disconnected',
+            'code': response.status_code,
+            'text': response.text
+        })
     except Exception as e:
         return jsonify({'status': 'unhealthy', 'error': str(e)}), 503
-
 # Ne plus utiliser app.run() en production ; Gunicorn s'occupe du serveur
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
